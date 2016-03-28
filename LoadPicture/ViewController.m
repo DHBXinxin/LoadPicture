@@ -7,11 +7,15 @@
 //
 
 #import "ViewController.h"
-#import "WaterFlow.h"
+//#import "WaterFlow.h"
+#import "OperationFlow.h"
+
 
 @interface ViewController ()
 {
-    WaterFlow *water;
+//    WaterFlow *water;
+    
+    OperationFlow *water;
 }
 @end
 
@@ -32,7 +36,7 @@
                       @"http://imgstatic.baidu.com/img/image/huacaozhiwu0207.jpg",
                       @"http://d.hiphotos.baidu.com/image/w%3D400/sign=7d27c75af4246b607b0eb374dbf81a35/5882b2b7d0a20cf4f28367d674094b36acaf99ac.jpg",
                       ];
-    water = [[WaterFlow alloc]initWithFrame:self.view.bounds];
+    water = [[OperationFlow alloc]initWithFrame:self.view.bounds];
     water.backgroundColor = [UIColor yellowColor];
     [self.view addSubview:water];
     

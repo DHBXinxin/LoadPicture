@@ -1,14 +1,17 @@
 //
-//  WaterFlow.m
+//  OperationFlow.m
 //  LoadPicture
 //
-//  Created by IOS on 16/3/25.
+//  Created by IOS on 16/3/28.
 //  Copyright © 2016年 IOS. All rights reserved.
 //
 
-#import "WaterFlow.h"
+#import "OperationFlow.h"
 
-@interface WaterFlow () {
+#define Space 5//间隔
+
+@interface OperationFlow ()
+{
     CGFloat viewWidth;
     CGFloat viewHeight;//本view的宽和高
     
@@ -21,30 +24,32 @@
     
     CGFloat leftHeight;
     CGFloat rightHeight;//左右边的高度
-
+    
 }
-@property (nonatomic) dispatch_queue_t serialQueue;
+
+@property (strong, nonatomic) NSOperationQueue *mainQueue;
+
 
 @end
-
-@implementation WaterFlow
+@implementation OperationFlow
 @synthesize lower = _lower;
 @synthesize mainScroll = _mainScroll;
 @synthesize pictures = _pictures;
 
-- (dispatch_queue_t)serialQueue {
-    if (_serialQueue) {
-        return _serialQueue;
+- (NSOperationQueue *)mainQueue {
+    if (_mainQueue) {
+        return _mainQueue;
     }
-    _serialQueue = dispatch_queue_create("story type", DISPATCH_QUEUE_SERIAL);
-    return _serialQueue;
+    
+    _mainQueue = [[NSOperationQueue alloc]init];
+    [_mainQueue setMaxConcurrentOperationCount:1];
+    return _mainQueue;
 }
-
 - (UIScrollView *)mainScroll {
     if (_mainScroll) {
         return _mainScroll;
     }
-    _mainScroll = [[UIScrollView alloc]initWithFrame:self.bounds];
+    _mainScroll = [[UIScrollView alloc]initWithFrame:self.frame];
     [_mainScroll setContentSize:self.frame.size];
     
     leftView = [[UIView alloc]initWithFrame:CGRectMake(Space, Space, columuWidth, 0)];
@@ -85,23 +90,22 @@
         rightView.frame = CGRectMake(rightView.frame.origin.x, rightView.frame.origin.y, columuWidth, 0);
     }
     [_mainScroll setContentSize:self.frame.size];
-    
+    if (_mainQueue) {
+        [_mainQueue cancelAllOperations];
+        _mainQueue = nil;
+    }
     [self getImageData:pictures];
+}
+- (void)getImage:(NSString *)string {
+    NSURL *url = [NSURL URLWithString:string];
+    NSData *data = [NSData dataWithContentsOfURL:url];
+    UIImage *image = [[UIImage alloc]initWithData:data];
+    [self performSelectorOnMainThread:@selector(makePictuerVisible:) withObject:image waitUntilDone:YES];
 }
 - (void)getImageData:(NSArray *)pictures {
     for (NSInteger i = 0; i < pictures.count; i++) {
-        __block UIImage *image;
-        dispatch_async(self.serialQueue, ^{
-            NSString *urlString = pictures[i];
-            NSURL *url = [NSURL URLWithString:urlString];
-            NSData *imageData = [NSData dataWithContentsOfURL:url];
-            image = [UIImage imageWithData:imageData];
-        });
-        dispatch_async(self.serialQueue, ^{
-            dispatch_async(dispatch_get_main_queue(), ^{
-                [self makePictuerVisible:image];
-            });
-        });
+        NSInvocationOperation *op = [[NSInvocationOperation alloc]initWithTarget:self selector:@selector(getImage:) object:pictures[i]];
+        [self.mainQueue addOperation:op];
     }
 }
 - (void)makePictuerVisible:(UIImage *)image {
